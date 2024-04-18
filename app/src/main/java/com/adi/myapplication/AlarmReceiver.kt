@@ -36,7 +36,6 @@ class AlarmReceiver : BroadcastReceiver() {
                 .addAction(R.drawable.ic_launcher_foreground, "trimite mesaj", pendingIntent)
 
             sendSMS(context, action.phoneNumber, "buna, sa ma iei de pula")
-
             notificationManager.notify(1, notification.build())
         }
     }
