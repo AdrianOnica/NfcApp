@@ -5,8 +5,8 @@ import android.provider.ContactsContract
 import android.util.Log
 import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
+import java.time.LocalDateTime
 import java.util.Calendar
-
 
 class MainActivity : AppCompatActivity() {
     var contactList: ArrayList<Contact> = ArrayList()
@@ -24,12 +24,11 @@ class MainActivity : AppCompatActivity() {
         listView = findViewById(R.id.listView)
         val adapter = ContactsAdapter(this, contactList)
         val scheduler = BirthdayAlarm(this)
-        scheduler.schedule("")
         getContactList()
+        contactList.setContactBirthdaybyMonth()
+        scheduler.schedule(Contact("Stroe", "0741091778", LocalDateTime.now()))
         listView.adapter = adapter
-
     }
-
 
     private fun getContactList() {
         val cr = contentResolver
@@ -53,23 +52,48 @@ class MainActivity : AppCompatActivity() {
                     number = cursor.getString(numberIndex)
                     number = number.replace(" ", "")
                     if (!mobileNoSet.contains(number)) {
-                        contactList.add(Contact(name, number, Calendar.getInstance().time.toString()))
+                        contactList.add(Contact(name, number, LocalDateTime.now()))
                         mobileNoSet.add(number)
-                        Log.d(
-                            "hvy", "onCreaterrView  Phone Number: name = " + name
-                                    + " No = " + number
-                        )
                     }
                 }
             } finally {
                 cursor.close()
             }
         }
-        Log.d("asada", "getContactList: ${contactList}")
     }
 
-    override fun onStart() {
-        super.onStart()
-    }
+    private fun ArrayList<Contact>.setContactBirthdaybyMonth() {
+        this.forEach { contact ->
+            when {
+                contact.name.lowercase().startsWith("B") -> {
+                }
 
+                contact.name.lowercase().startsWith("C") -> {
+
+                }
+
+                contact.name.lowercase().startsWith("D") -> {
+                }
+
+                contact.name.lowercase().startsWith("E") -> {
+                }
+
+                contact.name.lowercase().startsWith("F") -> {
+
+                }
+
+                contact.name.lowercase().startsWith("G") -> {
+
+                }
+
+                contact.name.lowercase().startsWith("H") -> {
+
+                }
+
+                contact.name.lowercase().startsWith("I") -> {
+
+                }
+            }
+        }
+    }
 }

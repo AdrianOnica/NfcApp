@@ -4,15 +4,17 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Parcel
+import android.os.Parcelable
 import java.time.LocalDateTime
 import java.time.ZoneId
 
 class BirthdayAlarm(val context: Context) : AlarmScheduler {
     private val alarmManager = context.getSystemService(AlarmManager::class.java)
 
-    override fun  schedule(date: String) {
+    override fun schedule(contact: Contact) {
         val intent = Intent(context, AlarmReceiver::class.java).apply {
-            putExtra("message", "data")
+            putExtra("contact", contact)
         }
 
         alarmManager.setExact(

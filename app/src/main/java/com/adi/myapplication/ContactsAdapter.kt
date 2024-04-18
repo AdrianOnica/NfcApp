@@ -31,7 +31,7 @@ class ContactsAdapter(val context: Context, val contactList: List<Contact>): Bas
         val contact = getItem(position)
         name.text = contact.name
         phoneNumber.text = contact.phoneNumber
-        birthDay.text = contact.birthDay
+        birthDay.text = contact.birthDay.toString()
         return view
     }
 }
