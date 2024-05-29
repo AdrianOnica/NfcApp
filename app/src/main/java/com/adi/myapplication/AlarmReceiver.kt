@@ -1,5 +1,6 @@
 package com.adi.myapplication
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
@@ -21,18 +22,18 @@ class AlarmReceiver : BroadcastReceiver() {
         val pendingIntent =
             PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
         if (action?.birthDay != null) {
-            Log.d("androidios", "onReceive: nue null")
             val notificationManager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val channel =
-                NotificationChannel("channel", "App", NotificationManager.IMPORTANCE_DEFAULT)
+                NotificationChannel("channel", "App", NotificationManager.IMPORTANCE_HIGH)
             notificationManager.createNotificationChannel(channel)
 
             val notification = NotificationCompat.Builder(context, "channel")
                 .setContentTitle("Is your Birthday")
                 .setContentText("Happy birthday loco")
                 .setSmallIcon(androidx.core.R.drawable.notification_bg)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setDefaults(Notification.DEFAULT_ALL)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .addAction(R.drawable.ic_launcher_foreground, "trimite mesaj", pendingIntent)
 
             sendSMS(context, action.phoneNumber, "buna, sa ma iei de pula")

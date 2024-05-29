@@ -1,24 +1,19 @@
 package com.adi.myapplication
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.provider.ContactsContract
-import android.util.Log
 import android.widget.ListView
 import androidx.appcompat.app.AppCompatActivity
 import com.adi.myapplication.MonthsOfYear.listOfMonths
 import java.time.LocalDateTime
-import java.util.Calendar
+import java.time.format.DateTimeParseException
+
 
 class MainActivity : AppCompatActivity() {
     var contactList: ArrayList<Contact> = ArrayList()
     private lateinit var listView: ListView
     private lateinit var adapter: ContactsAdapter
-
-    private val PROJECTION = arrayOf(
-        ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-        ContactsContract.Contacts.DISPLAY_NAME,
-        ContactsContract.CommonDataKinds.Phone.NUMBER
-    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -26,14 +21,19 @@ class MainActivity : AppCompatActivity() {
         listView = findViewById(R.id.listView)
         val scheduler = BirthdayAlarm(this)
         getContactList()
-        contactList.setContactBirthdaybyMonth()
         scheduler.schedule(Contact("Stroe", "0741091778", LocalDateTime.now()))
         adapter = ContactsAdapter(this, null, listOfMonths())
         adapter.contact_list = 1
         listView.adapter = adapter
         listView.setOnItemClickListener { adapterView, view, i, l ->
             if(adapter.contact_list == 1) {
-                adapter = ContactsAdapter(this, contactList, null)
+                adapter = ContactsAdapter(
+                    this,
+                    contactList.toCelebratedPerson(
+                        listOfMonths().nameOfMonthsToIndex(listOfMonths()[i]).toString()
+                    ),
+                    null
+                )
                 adapter.contact_list = 0
                 listView.adapter =  adapter
             }
@@ -49,70 +49,80 @@ class MainActivity : AppCompatActivity() {
             finish()
         }
     }
+    @SuppressLint("Range")
     private fun getContactList() {
         val cr = contentResolver
-        val cursor = cr.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            PROJECTION,
-            null,
-            null,
-            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
+        val listOfBirthdays = mutableListOf<Pair<String, String>>()
+
+        val projection = arrayOf(ContactsContract.Data.CONTACT_ID,
+            ContactsContract.Data.DISPLAY_NAME,
+            ContactsContract.Data.DATA1,
+            ContactsContract.Data.DATA2,
+            ContactsContract.Data.MIMETYPE
         )
+
+        val selection = "${ContactsContract.Data.MIMETYPE} IN (?, ?)"
+        val selectionArgs = arrayOf(
+            ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE,
+            ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
+        )
+
+        val cursor = cr.query(
+            ContactsContract.Data.CONTENT_URI,
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )
+
         if (cursor != null) {
             val mobileNoSet = HashSet<String>()
             try {
-                val nameIndex = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)
-                val numberIndex =
-                    cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                val nameIndex = cursor.getColumnIndex(ContactsContract.Data.DISPLAY_NAME)
+                val data1Index = cursor.getColumnIndex(ContactsContract.Data.DATA1)
                 var name: String
+                var birthday: Pair<String, String>
                 var number: String
                 while (cursor.moveToNext()) {
                     name = cursor.getString(nameIndex)
-                    number = cursor.getString(numberIndex)
-                    number = number.replace(" ", "")
-                    if (!mobileNoSet.contains(number)) {
-                        contactList.add(Contact(name, number, LocalDateTime.now()))
-                        mobileNoSet.add(number)
+                    when (cursor.getString(cursor.getColumnIndex(ContactsContract.Data.MIMETYPE))) {
+                        ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE ->  {
+                            birthday = name to cursor.getString(data1Index)
+                            listOfBirthdays.add(birthday)
+                        }
+                        ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE -> {
+                            number = cursor.getString(data1Index)
+                            number = number.replace(" ", "")
+                            if (!mobileNoSet.contains(number)) {
+                                contactList.add(Contact(name, number, null))
+                                mobileNoSet.add(number)
+                            }
+                        }
                     }
                 }
             } finally {
+                listOfBirthdays.forEach { birthday ->
+                    contactList.forEach { contact ->
+                        if (birthday.first == contactList[contactList.indexOf(contact)].name)
+                            contactList[contactList.indexOf(contact)].birthDay =
+                                ("${birthday.second}T00:00:00").toLocalDateTime()
+                    }
+                }
                 cursor.close()
             }
         }
     }
+}
+fun String.toLocalDateTime(): LocalDateTime {
+    return try {
+        LocalDateTime.parse(this)
+    } catch (e: DateTimeParseException) {
+        throw IllegalArgumentException("Invalid date string: $this", e)
+    }
+}
 
-    private fun ArrayList<Contact>.setContactBirthdaybyMonth() {
-        this.forEach { contact ->
-            when {
-                contact.name.lowercase().startsWith("B") -> {
-                }
-
-                contact.name.lowercase().startsWith("C") -> {
-
-                }
-
-                contact.name.lowercase().startsWith("D") -> {
-                }
-
-                contact.name.lowercase().startsWith("E") -> {
-                }
-
-                contact.name.lowercase().startsWith("F") -> {
-
-                }
-
-                contact.name.lowercase().startsWith("G") -> {
-
-                }
-
-                contact.name.lowercase().startsWith("H") -> {
-
-                }
-
-                contact.name.lowercase().startsWith("I") -> {
-
-                }
-            }
-        }
+fun List<Contact>.toCelebratedPerson(monthIndex: String): List<Contact> {
+    return this.filter {
+        it.birthDay?.monthValue.toString() == monthIndex
     }
 }
